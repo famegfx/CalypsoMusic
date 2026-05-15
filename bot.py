@@ -6,7 +6,7 @@ from pyrogram import Client, filters
 from pyrogram.types import Message
 from pytgcalls import PyTgCalls
 from pytgcalls.types import MediaStream, Update
-from pytgcalls.exceptions import NoActiveGroupCall, AlreadyJoinedError
+from pytgcalls.exceptions import NoActiveGroupCall
 import yt_dlp
 
 # ─── Logging ─────────────────────────────────────────────────────────────────
@@ -78,8 +78,6 @@ async def play_next(chat_id: int):
     except NoActiveGroupCall:
         queues[chat_id].clear()
         logger.warning(f"[{chat_id}] No active group call.")
-    except AlreadyJoinedError:
-        pass
     except Exception as e:
         logger.error(f"[{chat_id}] play error: {e}")
         queues[chat_id].pop(0)
@@ -219,3 +217,4 @@ if __name__ == "__main__":
         loop.run_until_complete(main())
     finally:
         loop.close()
+        
