@@ -1,5 +1,5 @@
-pyrotgfork==2.2.23
-py-tgcalls==2.2.11
-ntgcalls==2.1.0
-yt-dlp==2024.11.18
+pyrogram==2.0.106
+TgCrypto
+py-tgcalls==0.9.44
+yt-dlp
 aiohttp==3.13.5
