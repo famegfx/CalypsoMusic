@@ -4,8 +4,9 @@ import logging
 from aiohttp import web
 from pyrogram import Client, filters
 from pyrogram.types import Message
-from pytgcalls import PyTgCalls
-from pytgcalls.types import MediaStream, Update
+from pytgcalls import PyTgCalls, idle
+from pytgcalls.types.input_stream import AudioPiped
+from pytgcalls.types.stream import StreamAudioEnded
 from pytgcalls.exceptions import NoActiveGroupCall
 import yt_dlp
 
@@ -73,7 +74,11 @@ async def play_next(chat_id: int):
         return
     track = queues[chat_id][0]
     try:
-        await call.play(chat_id, MediaStream(track["url"]))
+        await call.join_group_call(
+            chat_id,
+            AudioPiped(track["url"]),
+            stream_type=None,
+        )
         logger.info(f"[{chat_id}] Playing: {track['title']}")
     except NoActiveGroupCall:
         queues[chat_id].clear()
@@ -84,15 +89,12 @@ async def play_next(chat_id: int):
         await play_next(chat_id)
 
 
-@call.on_update()
-async def stream_ended(client: PyTgCalls, update: Update):
-    if isinstance(update, Update) and hasattr(update, 'chat_id'):
-        chat_id = update.chat_id
-        # Only handle stream end updates
-        if 'stream_ended' in type(update).__name__.lower() or 'ended' in type(update).__name__.lower():
-            if queues.get(chat_id):
-                queues[chat_id].pop(0)
-            await play_next(chat_id)
+@call.on_stream_end()
+async def stream_ended(_, update: StreamAudioEnded):
+    chat_id = update.chat_id
+    if queues.get(chat_id):
+        queues[chat_id].pop(0)
+    await play_next(chat_id)
 
 
 # ─── Bot Commands ─────────────────────────────────────────────────────────────
@@ -208,13 +210,8 @@ async def main():
     await assistant.start()
     await call.start()
     logger.info("✅ Bot is live!")
-    await asyncio.Event().wait()
+    await idle()
 
 if __name__ == "__main__":
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        loop.run_until_complete(main())
-    finally:
-        loop.close()
-        
+    asyncio.run(main())
+            
